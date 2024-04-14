@@ -12,7 +12,7 @@ export const createResponseLatestMessage = () => ({
 
 export const createResponseChainMessage = () => ({
   type: MessageType.RESPONSE_BLOCKCHAIN,
-  data: [Blockchain.getInstance().blocks]
+  data: Blockchain.getInstance().blocks
 });
 
 export const broadcastMessage = (message: any) => WSServer.getInstance().sockets.forEach(socket => {

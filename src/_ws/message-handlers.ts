@@ -32,6 +32,7 @@ export class ResponseBlockchainMessageHandler implements IMessageHandler {
     const latestBlockReceived = receivedBlocks[receivedBlocks.length - 1];
     const latestBlockHeld = Blockchain.getInstance().getLatestBlock();
 
+    // This must never happen as there is always the genesis block
     if (!latestBlockReceived) {
       console.log("No blocks were received, nothing to handle");
       return;
@@ -73,13 +74,10 @@ export class MessageHandlerFactory {
     switch (type) {
       case MessageType.QUERY_LATEST:
         return new QueryLatestMessageHandler();
-        break;
       case MessageType.QUERY_ALL:
         return new QueryAllMessageHandler();
-        break;
       case MessageType.RESPONSE_BLOCKCHAIN:
         return new ResponseBlockchainMessageHandler();
-        break;
       default:
         console.log(`Invalid message type: ${type}. Handler could not be provided.`);
 

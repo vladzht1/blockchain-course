@@ -1,4 +1,5 @@
 import crypto from "crypto-js";
+
 import { DIFFICULTY } from "./constants/env";
 
 export class Block<T = any> {
@@ -9,6 +10,18 @@ export class Block<T = any> {
   private hash: string;
   private difficulty: number;
   private nonce: number;
+
+  public static fromRaw(raw: any): Block {
+    return new Block(
+      raw["index"],
+      raw["previousHash"],
+      raw["timestamp"],
+      raw["data"],
+      raw["hash"],
+      raw["difficulty"],
+      raw["nonce"]
+    );
+  }
 
   public constructor(index: number, previousHash: string, timestamp: number, data: T, hash: string, difficulty: number, nonce: number) {
     this.index = index;
@@ -58,6 +71,8 @@ export class BlockGenerator {
     );
   }
 
+  // Algorithm for testing
+
   // public generateNext<T>(data: T, blockchain: Blockchain): Block<T> | null {
   //   const previousBlock = blockchain.getLatestBlock();
   //   const nextBlockIndex = blockchain.getNextIndex();
@@ -75,7 +90,7 @@ export class BlockGenerator {
     let nextBlockTimestamp = this.calculateTimestamp();
     let nextBlockHash = this.calculateHash(nextBlockIndex, previousBlock.getHash(), nextBlockTimestamp, data, nonce);
 
-    while (nextBlockHash.substring(0, DIFFICULTY) !== Array(DIFFICULTY + 1).join("0")) {
+    while (!this.hashMatches(nextBlockHash, DIFFICULTY)) {
       nonce++;
 
       nextBlockTimestamp = this.calculateTimestamp();
@@ -99,6 +114,39 @@ export class BlockGenerator {
 
   public calculateHash(index: number, previousBlockHash: string, timestamp: number, data: any, nonce: number): string {
     return crypto.SHA256(index + previousBlockHash + timestamp + data + nonce).toString();
+  }
+
+  // --- Palindrome implementation
+
+  // private hashMatches(hash: string, difficulty: number): boolean {
+  //   let palindromeLength = 0;
+
+  //   for (let i = 0; i < difficulty; i++) {
+  //     if (hash[i] === hash[hash.length - 1 - i]) {
+  //       palindromeLength++;
+  //     }
+
+  //     if (palindromeLength >= difficulty) {
+  //       return true;
+  //     }
+  //   }
+
+  //   return false;
+  // }
+
+  // --- Anagram implementation
+
+  private hashMatches(hash: string, difficulty: number): boolean {
+    const left = hash.substring(0, difficulty).split("").sort();
+    const right = hash.substring(hash.length - difficulty).split("").sort();
+
+    for (let index = 0; index < left.length; index++) {
+      if (left[index] !== right[index]) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   private calculateTimestamp(): number {

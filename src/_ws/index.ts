@@ -5,6 +5,8 @@ import { Peer } from "../peers";
 import { createQueryLengthMessage } from "../shared";
 import { MessageHandlerFactory } from "./message-handlers";
 
+export const MAX_RETRIES = 3;
+
 export const initializeP2PServer = async (): Promise<void> => {
   if (!WSServer.init(P2P_PORT)) {
     throw new Error("Unable to initialize P2P server!");
@@ -24,9 +26,8 @@ export class WSServer {
 
   public static init(port: number): boolean {
     this._instance = new WSServer(new WebSocket.Server({ port }));
-
-    // TODO: Handle errors here (if they can occur)
     this._instance._isInitialized = true;
+
     return true;
   }
 
@@ -47,17 +48,33 @@ export class WSServer {
     return this._sockets;
   }
 
-  public connectToPeers(peers: Peer[]): boolean {
-    let success = true;
-
+  public connectToPeers(peers: Peer[]): void {
     peers.forEach(peer => {
-      const ws = new WebSocket(peer.address);
+      const connected = this.connectToPeer(peer);
 
-      ws.on("connection", () => this.initializeConnection(ws));
-      ws.on("error", () => {
-        console.error("Connection to peer failed")
-        success = false;
-      });
+      !connected && console.error(`Connection to peer ${peer.address} failed`)
+    });
+  }
+
+  private connectToPeer(peer: Peer, retries: number = 0): boolean {
+    const ws = new WebSocket(peer.address);
+
+    let success: boolean = true;
+
+    ws.on("open", () => {
+      this.initializeConnection(ws);
+      success = true;
+    });
+
+    ws.on("error", () => {
+      if (retries < MAX_RETRIES) {
+        console.log(`Connection to peer failed, retrying ${retries + 1}...`);
+
+        setTimeout(() => this.connectToPeer(peer, retries + 1), 200);
+        return;
+      }
+
+      success = false;
     });
 
     return success;
@@ -69,7 +86,7 @@ export class WSServer {
     this.initializeMessageHandler(ws);
     this.initializeErrorHandler(ws);
 
-    ws.send(JSON.stringify(createQueryLengthMessage()));
+    ws.send(createQueryLengthMessage());
   }
 
   private initializeMessageHandler(ws: WebSocket): void {
@@ -79,8 +96,8 @@ export class WSServer {
 
       console.log("Received message:", message);
 
-      if (!messageType) {
-        console.log("Invalid message format: message must contain a type field");
+      if (messageType == null) {
+        console.log("Invalid message format: message must contain a `type` field");
         return;
       }
 

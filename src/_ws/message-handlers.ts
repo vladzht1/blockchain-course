@@ -27,7 +27,9 @@ export class QueryAllMessageHandler implements IMessageHandler {
 
 export class ResponseBlockchainMessageHandler implements IMessageHandler {
   public handle(_: WebSocket, message: any): void {
-    const receivedBlocks: Block[] = JSON.parse(message.data).sort((left: Block, right: Block) => left.getIndex() - right.getIndex());
+    const receivedBlocks: Block[] = JSON.parse(message.data)
+      .sort((left: Block, right: Block) => left.getIndex() - right.getIndex())
+      .map((block: any) => Block.fromRaw(block));
 
     const latestBlockReceived = receivedBlocks[receivedBlocks.length - 1];
     const latestBlockHeld = Blockchain.getInstance().getLatestBlock();

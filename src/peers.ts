@@ -50,7 +50,7 @@ export const parsePeersFromString = (peersAsString: string[]): Peer[] => {
   const peers: Peer[] = [];
 
   peersAsString.forEach(peer => {
-    const updatedPeer = peer.replace("/", "");
+    const updatedPeer = peer.replace("//", "").replace("/", "");
     const [protocol, host, port] = updatedPeer.split(':');
 
     if (!protocol || protocol !== "ws" || !host || !port || isNaN(parseInt(port))) {
